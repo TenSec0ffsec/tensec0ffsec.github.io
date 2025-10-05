@@ -6,7 +6,7 @@
 <body>
     <h1>Haz clic para ver una sorpresa</h1>
     <div id="resultado"></div>
-    <img id="profilePic" style="display:none;" alt="Profile Picture">
+    <img id="profilePic" style="display:none;" alt="Profile Picture" crossorigin="anonymous">
     <script>
         const img = document.getElementById('profilePic');
         img.src = 'https://chl-252b03b2-82ca-46a6-b558-a03090ccae52-imagen-importante.softwareseguro.com.ar/profile-pic';
@@ -23,7 +23,7 @@
         };
 
         img.onerror = (error) => {
-            document.getElementById('resultado').innerHTML = `<p>Error al cargar la imagen: ${error.message || 'No se pudo acceder a la imagen. Verifica que estás logueado.'}</p>`;
+            document.getElementById('resultado').innerHTML = `<p>Error al cargar la imagen: ${error.message || 'No se pudo acceder a la imagen. Verifica que estás logueado en Imagen Importante.'}</p>`;
         };
     </script>
 </body>
