@@ -3,69 +3,93 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Demo lab: obtener tamaño imagen cooperativo</title>
+  <title>p2 — Forzar set-cookie en p1 y luego fetch</title>
 </head>
 <body>
-  <h1>Demo cooperativa: obtener tamaño y MD5 del nivel</h1>
-  <p>Haz click para intentar obtener la imagen desde p1 (solo funciona si p1 permite CORS y credenciales).</p>
-  <button id="run">Pedir imagen y calcular nivel</button>
-
-  <div id="result" style="margin-top:1em"></div>
-  <!-- MD5 desde CDN (blueimp-md5) - uso educativo en laboratorio controlado -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/blueimp-md5/2.19.0/js/md5.min.js"
-    integrity="sha512-6pQZfV+7wKk1gZ0bLq6cLfi0u7v2x9nJw6kKq5dB5qYq8Qf1X+v8zQ3x5k9Y6c4x5m3h0tLz8g3Jwq2YwqQ=="
-    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <h2>p2 — Demo: pasar session desde localStorage a p1 y pedir /profile-pic</h2>
+  <p>Presiona para enviar el valor de localStorage.session a p1 y luego pedir la imagen.</p>
+  <button id="startBtn">Transferir sesión y pedir imagen</button>
+  <div id="status" style="margin-top:1em"></div>
+  <div id="result"></div>
 
   <script>
-    const P1_URL = 'https://chl-252b03b2-82ca-46a6-b558-a03090ccae52-imagen-importante.softwareseguro.com.ar/profile-pic'; // reemplazar por tu p1
+    const p1Origin = 'https://chl-252b03b2-82ca-46a6-b558-a03090ccae52-imagen-importante.softwareseguro.com.ar'; // reemplazar
+    const profilePicPath = '/profile-pic';
 
-    document.getElementById('run').addEventListener('click', async () => {
-      const out = document.getElementById('result');
-      out.textContent = 'Solicitando imagen...';
+    const status = document.getElementById('status');
+    const result = document.getElementById('result');
 
+    function log(s){ status.innerHTML = s; console.log(s); }
+
+    // Escuchar el mensaje de confirmación desde el iframe (p1)
+    window.addEventListener('message', (ev) => {
+      // Verificar origen por seguridad
+      if (ev.origin !== p1Origin) return;
+      if (ev.data && ev.data.type === 'session-set'){
+        log('p1 confirmó: cookie seteada. Ahora pedir /profile-pic con credentials.');
+        fetchProfilePic();
+      }
+    });
+
+    document.getElementById('startBtn').addEventListener('click', async () => {
+      const sessionVal = localStorage.getItem('session');
+      if (!sessionVal) {
+        log('No hay localStorage.session. Guarda el valor primero.');
+        return;
+      }
+
+      // crear iframe invisible apuntando a p1/set-session?val=...
+      const redirectOrigin = location.origin; // p2 origin, p1 usará esto para postMessage targetOrigin
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      // encode el valor en la URL (en lab; para prod usar POST y body)
+      const url = `${p1Origin}${setSessionPath}?val=${encodeURIComponent(sessionVal)}&redirectOrigin=${encodeURIComponent(redirectOrigin)}`;
+      iframe.src = url;
+      document.body.appendChild(iframe);
+
+      log('Iframe creado y apuntando a p1 para que setee la cookie. Esperando confirmación...');
+      // si no llega mensaje, la siguiente petición fallará; puedes añadir timeout si lo deseas
+    });
+
+    async function fetchProfilePic(){
       try {
-        // Petición que envía cookies si p1 permite credentials
-        const resp = await fetch(P1_URL, {
+        result.innerHTML = 'Solicitando imagen...';
+        const resp = await fetch(p1Origin + profilePicPath, {
           method: 'GET',
-          credentials: 'include' // envía cookies (solo si p1 y cookie lo permiten)
+          credentials: 'include' // clave: hace que el navegador envíe la cookie de p1
         });
 
         if (!resp.ok) {
-          out.textContent = `Error al obtener la imagen: ${resp.status}`;
+          result.innerHTML = 'Error al obtener imagen: ' + resp.status;
           return;
         }
 
-        // Obtener blob y crear un objeto URL para asignar a Image
         const blob = await resp.blob();
-        const url = URL.createObjectURL(blob);
+        // Forzar tipo si está vacío (opcional)
+        const mime = blob.type || 'image/png';
+        const url = URL.createObjectURL(new Blob([blob], { type: mime }));
 
+        // Mostrar imagen y calcular dimensiones
         const img = new Image();
         img.onload = () => {
-          const width = img.naturalWidth;
-          const height = img.naturalHeight;
-          const level = width * height;
-          const md5hash = md5(String(level)); // usa la librería cargada desde CDN
-
-          out.innerHTML =
-            `<p>Dimensiones: ${width} × ${height} px</p>
-             <p>Nivel: ${level}</p>
-             <p>MD5(nivel): <code>${md5hash}</code></p>
-             <p><img src="${url}" alt="imagen recibida" style="max-width:300px; display:block; margin-top:8px"></p>`;
-
+          const w = img.naturalWidth, h = img.naturalHeight;
+          const level = w * h;
+          result.innerHTML = `<p>Dimensiones: ${w} × ${h}</p>
+                              <p>Nivel: ${level}</p>
+                              <p><img src="${url}" style="max-width:300px"></p>`;
           URL.revokeObjectURL(url);
         };
-
         img.onerror = () => {
-          out.textContent = 'No se pudo cargar la imagen (posible problema de CORS o blob).';
+          result.innerHTML = 'No se pudo renderizar la imagen (blob inválido).';
           URL.revokeObjectURL(url);
         };
-
         img.src = url;
 
       } catch (err) {
-        out.textContent = 'Error en la operación: ' + err;
+        console.error(err);
+        result.innerHTML = 'Error: ' + err;
       }
-    });
+    }
   </script>
 </body>
 </html>
