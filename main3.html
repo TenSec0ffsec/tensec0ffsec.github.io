@@ -1,1 +1,77 @@
-<img src="https://chl-60d5b8fe-ad2b-4192-b170-f20940af90ab-imagen-importante.softwareseguro.com.ar/profile-pic" alt="@hacklab">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Load Profile Picture from p1</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            margin-top: 20px;
+        }
+        .error {
+            color: red;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Profile Picture from p1</h1>
+    <p>Attempting to load the profile picture from p1 using two methods: an img tag and a fetch request.</p>
+
+    <!-- Method 1: Using <img> tag to load the image directly -->
+    <h2>Method 1: Using &lt;img&gt; tag</h2>
+    <p>This uses a simple img tag to load the image. The browser automatically sends the session cookie if available.</p>
+    <img src="https://chl-60d5b8fe-ad2b-4192-b170-f20940af90ab-imagen-importante.softwareseguro.com.ar/profile-pic" alt="User profile picture from p1" id="profile-pic-img">
+
+    <!-- Method 2: Using fetch to load the image -->
+    <h2>Method 2: Using fetch</h2>
+    <p>This uses JavaScript fetch to load the image as a Blob and display it. It explicitly includes credentials to send the session cookie.</p>
+    <div id="fetch-result"></div>
+
+    <script>
+        // Function to load the image using fetch
+        async function loadProfilePicture() {
+            const fetchResult = document.getElementById('fetch-result');
+            try {
+                const response = await fetch('https://chl-60d5b8fe-ad2b-4192-b170-f20940af90ab-imagen-importante.softwareseguro.com.ar/profile-pic', {
+                    method: 'GET',
+                    credentials: 'include', // Send session cookies
+                    mode: 'cors' // Use CORS mode to allow reading the response
+                });
+
+                if (!response.ok) {
+                    if (response.status === 302) {
+                        fetchResult.innerHTML = '<p class="error">Error: Redirected to login. Please ensure you are logged in on p1 and the session cookie is valid.</p>';
+                    } else {
+                        fetchResult.innerHTML = `<p class="error">Error: Failed to load image (Status: ${response.status}).</p>`;
+                    }
+                    return;
+                }
+
+                // Convert response to Blob for image handling
+                const blob = await response.blob();
+                const imgUrl = URL.createObjectURL(blob);
+                
+                // Create and append the image
+                const img = document.createElement('img');
+                img.src = imgUrl;
+                img.alt = 'User profile picture loaded via fetch from p1';
+                fetchResult.appendChild(img);
+            } catch (error) {
+                fetchResult.innerHTML = `<p class="error">Error: ${error.message}. Check if the server is reachable and CORS is properly configured.</p>`;
+            }
+        }
+
+        // Run the fetch function when the page loads
+        window.onload = loadProfilePicture;
+    </script>
+</body>
+</html>
