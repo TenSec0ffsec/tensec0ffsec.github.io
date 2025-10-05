@@ -19,7 +19,7 @@
 
       const img = new Image();
       img.src = target;
-      // opcional: img.crossOrigin = "use-credentials"; // NO asegura lectura si servidor no permite CORS
+      img.crossOrigin = "use-credentials"; // NO asegura lectura si servidor no permite CORS
       img.onload = function() {
         const w = img.naturalWidth, h = img.naturalHeight;
         const level = w * h;
