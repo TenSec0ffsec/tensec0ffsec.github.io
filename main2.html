@@ -1,95 +1,36 @@
 <!doctype html>
 <html lang="es">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>p2 — Forzar set-cookie en p1 y luego fetch</title>
-</head>
+<head><meta charset="utf-8"><title>Test cookie p1</title></head>
 <body>
-  <h2>p2 — Demo: pasar session desde localStorage a p1 y pedir /profile-pic</h2>
-  <p>Presiona para enviar el valor de localStorage.session a p1 y luego pedir la imagen.</p>
-  <button id="startBtn">Transferir sesión y pedir imagen</button>
-  <div id="status" style="margin-top:1em"></div>
-  <div id="result"></div>
+<button id="go">Probar fetch con cookie de p1</button>
+<pre id="out"></pre>
+<script>
+const out = document.getElementById('out');
+const P1 = 'https://p1.ejemplo.com/profile-pic'; // ajustá
 
-  <script>
-    const p1Origin = 'https://chl-252b03b2-82ca-46a6-b558-a03090ccae52-imagen-importante.softwareseguro.com.ar'; // reemplazar
-    const profilePicPath = '/profile-pic';
+document.getElementById('go').onclick = async () => {
+  out.textContent = 'Haciendo fetch...';
+  try {
+    const resp = await fetch(P1, { credentials: 'include' });
+    out.textContent += '\nStatus: ' + resp.status;
+    const ct = resp.headers.get('content-type') || '';
+    out.textContent += '\nContent-Type: ' + ct;
 
-    const status = document.getElementById('status');
-    const result = document.getElementById('result');
-
-    function log(s){ status.innerHTML = s; console.log(s); }
-
-    // Escuchar el mensaje de confirmación desde el iframe (p1)
-    window.addEventListener('message', (ev) => {
-      // Verificar origen por seguridad
-      if (ev.origin !== p1Origin) return;
-      if (ev.data && ev.data.type === 'session-set'){
-        log('p1 confirmó: cookie seteada. Ahora pedir /profile-pic con credentials.');
-        fetchProfilePic();
-      }
-    });
-
-    document.getElementById('startBtn').addEventListener('click', async () => {
-      const sessionVal = localStorage.getItem('session');
-      if (!sessionVal) {
-        log('No hay localStorage.session. Guarda el valor primero.');
-        return;
-      }
-
-      // crear iframe invisible apuntando a p1/set-session?val=...
-      const redirectOrigin = location.origin; // p2 origin, p1 usará esto para postMessage targetOrigin
-      const iframe = document.createElement('iframe');
-      iframe.style.display = 'none';
-      // encode el valor en la URL (en lab; para prod usar POST y body)
-      const url = `${p1Origin}${setSessionPath}?val=${encodeURIComponent(sessionVal)}&redirectOrigin=${encodeURIComponent(redirectOrigin)}`;
-      iframe.src = url;
-      document.body.appendChild(iframe);
-
-      log('Iframe creado y apuntando a p1 para que setee la cookie. Esperando confirmación...');
-      // si no llega mensaje, la siguiente petición fallará; puedes añadir timeout si lo deseas
-    });
-
-    async function fetchProfilePic(){
-      try {
-        result.innerHTML = 'Solicitando imagen...';
-        const resp = await fetch(p1Origin + profilePicPath, {
-          method: 'GET',
-          credentials: 'include' // clave: hace que el navegador envíe la cookie de p1
-        });
-
-        if (!resp.ok) {
-          result.innerHTML = 'Error al obtener imagen: ' + resp.status;
-          return;
-        }
-
-        const blob = await resp.blob();
-        // Forzar tipo si está vacío (opcional)
-        const mime = blob.type || 'image/png';
-        const url = URL.createObjectURL(new Blob([blob], { type: mime }));
-
-        // Mostrar imagen y calcular dimensiones
-        const img = new Image();
-        img.onload = () => {
-          const w = img.naturalWidth, h = img.naturalHeight;
-          const level = w * h;
-          result.innerHTML = `<p>Dimensiones: ${w} × ${h}</p>
-                              <p>Nivel: ${level}</p>
-                              <p><img src="${url}" style="max-width:300px"></p>`;
-          URL.revokeObjectURL(url);
-        };
-        img.onerror = () => {
-          result.innerHTML = 'No se pudo renderizar la imagen (blob inválido).';
-          URL.revokeObjectURL(url);
-        };
-        img.src = url;
-
-      } catch (err) {
-        console.error(err);
-        result.innerHTML = 'Error: ' + err;
-      }
+    const blob = await resp.blob();
+    if (ct.startsWith('image/')) {
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.src = url;
+      document.body.appendChild(img);
+    } else {
+      out.textContent += '\nNo es imagen (probablemente HTML de login).';
+      const text = await blob.text();
+      console.log(text.slice(0,200)); // muestra primeros bytes
     }
-  </script>
+  } catch (e) {
+    out.textContent = 'Error: ' + e;
+  }
+};
+</script>
 </body>
 </html>
