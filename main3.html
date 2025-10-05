@@ -20,6 +20,20 @@
             color: red;
             margin-top: 20px;
         }
+        .info {
+            color: blue;
+            margin-top: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+        pre {
+            background-color: #f4f4f4;
+            padding: 10px;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
@@ -36,7 +50,50 @@
     <p>This uses JavaScript fetch to load the image as a Blob and display it. It explicitly includes credentials to send the session cookie.</p>
     <div id="fetch-result"></div>
 
+    <!-- Debug: Show current cookies for p1 -->
+    <h2>Debug: Current Cookies</h2>
+    <p>Below is the current session cookie for p1 (if available). A valid cookie should have a 'user_id' in the payload.</p>
+    <pre id="cookie-info">Checking cookies...</pre>
+
+    <!-- Button to open login page -->
+    <h2>Login to p1</h2>
+    <p>If the image doesn't load, you may need to log in to p1 to generate a valid session cookie with a user_id.</p>
+    <button onclick="window.open('https://chl-60d5b8fe-ad2b-4192-b170-f20940af90ab-imagen-importante.softwareseguro.com.ar/login', '_blank')">Log in to p1</button>
+
     <script>
+        // Function to decode JWT payload
+        function decodeJWTPayload(jwt) {
+            try {
+                const payload = jwt.split('.')[1];
+                return JSON.parse(atob(payload));
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // Function to check and display cookies for p1
+        function checkCookies() {
+            const cookieInfo = document.getElementById('cookie-info');
+            const cookies = document.cookie.split(';').map(cookie => cookie.trim());
+            const sessionCookie = cookies.find(cookie => cookie.startsWith('session='));
+            if (sessionCookie) {
+                const jwt = sessionCookie.split('=')[1];
+                const payload = decodeJWTPayload(jwt);
+                if (payload) {
+                    cookieInfo.textContent = `Session Cookie: ${jwt}\nPayload: ${JSON.stringify(payload, null, 2)}`;
+                    if (payload._flashes) {
+                        cookieInfo.innerHTML += '<p class="error">Error: The cookie contains a login error message. Please log in to p1 to get a valid session cookie with user_id.</p>';
+                    } else if (payload.user_id) {
+                        cookieInfo.innerHTML += '<p class="info">Valid session cookie detected with user_id.</p>';
+                    }
+                } else {
+                    cookieInfo.textContent = 'Invalid session cookie format.';
+                }
+            } else {
+                cookieInfo.textContent = 'No session cookie found for p1. Please log in to p1.';
+            }
+        }
+
         // Function to load the image using fetch
         async function loadProfilePicture() {
             const fetchResult = document.getElementById('fetch-result');
@@ -49,7 +106,7 @@
 
                 if (!response.ok) {
                     if (response.status === 302) {
-                        fetchResult.innerHTML = '<p class="error">Error: Redirected to login. Please ensure you are logged in on p1 and the session cookie is valid.</p>';
+                        fetchResult.innerHTML = '<p class="error">Error: Redirected to login. The session cookie is invalid or missing. Please log in to p1 using the button below.</p>';
                     } else {
                         fetchResult.innerHTML = `<p class="error">Error: Failed to load image (Status: ${response.status}).</p>`;
                     }
@@ -65,13 +122,17 @@
                 img.src = imgUrl;
                 img.alt = 'User profile picture loaded via fetch from p1';
                 fetchResult.appendChild(img);
+                fetchResult.innerHTML += '<p class="info">Image loaded successfully via fetch.</p>';
             } catch (error) {
-                fetchResult.innerHTML = `<p class="error">Error: ${error.message}. Check if the server is reachable and CORS is properly configured.</p>`;
+                fetchResult.innerHTML = `<p class="error">Error: ${error.message}. Check if the server is reachable, CORS is properly configured, or the session cookie is valid.</p>`;
             }
         }
 
-        // Run the fetch function when the page loads
-        window.onload = loadProfilePicture;
+        // Run functions when the page loads
+        window.onload = () => {
+            checkCookies();
+            loadProfilePicture();
+        };
     </script>
 </body>
 </html>
